@@ -1,0 +1,23 @@
+package riemannSum;
+
+import polyfun.Polynomial;
+
+public class TrapezoidRule {
+	
+	public double slice(Polynomial p, double sleft, double sright) {
+		double area;
+		double base1;
+		double base2;
+		double height;
+		PolyPractice popeye = new PolyPractice();
+		
+		height = sright-sleft;
+		base1 = popeye.eval(p, sleft);
+		base2 = popeye.eval(p, sright);
+		
+		area = ((base1+base2)/2)*height;
+		
+		return area;
+	}
+
+}

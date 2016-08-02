@@ -1,0 +1,29 @@
+package riemannSum;
+
+import org.opensourcephysics.frames.DisplayFrame;
+
+import polyfun.Polynomial;
+
+public class LeftHandRule extends Riemann {
+		
+	public LeftHandRule() {
+		
+	}
+	
+	public double slice(Polynomial p, double sleft, double sright) {
+		double area;
+		double height;
+		double length;
+		PolyPractice popeye = new PolyPractice();
+		
+		height = popeye.eval(p, sleft);
+		length = sright - sleft;
+		area = height*length;
+		
+		return area;
+	}
+	
+	public void slicePlot(DisplayFrame frame, Polynomial p, double sleft, double sright) {
+		
+	}
+}

@@ -1,0 +1,58 @@
+package riemannSum;
+
+import org.opensourcephysics.display.DrawableShape;
+import org.opensourcephysics.display.Trail;
+import org.opensourcephysics.frames.DisplayFrame;
+
+import polyfun.Polynomial;
+
+public class TrapezoidRule extends Riemann {
+	
+	public double slice(Polynomial p, double sleft, double sright) {
+		double area;
+		double base1;
+		double base2;
+		double height;
+		PolyPractice popeye = new PolyPractice();
+		
+		height = sright-sleft;
+		base1 = popeye.eval(p, sleft);
+		base2 = popeye.eval(p, sright);
+		
+		area = ((base1+base2)/2)*height;
+		
+		return area;
+	}
+
+	
+	public void slicePlot(DisplayFrame frame, Polynomial p, double sleft, double sright) {
+		PolyPractice popeye = new PolyPractice();
+		double leftHeight = popeye.eval(p, sleft);
+		double rightHeight = popeye.eval(p, sright);
+		double width = sright - sleft;
+
+		Trail leftSide = new Trail();
+		Trail rightSide = new Trail();
+		Trail bottom = new Trail();
+		Trail top = new Trail();
+		
+		leftSide.addPoint(sleft, 0);
+		leftSide.addPoint(sleft, leftHeight);
+		
+		rightSide.addPoint(sright, 0);
+		rightSide.addPoint(sright, rightHeight);
+		
+		bottom.addPoint(sleft, 0);
+		bottom.addPoint(sright, 0);
+		
+		top.addPoint(sleft, leftHeight);
+		top.addPoint(sright, rightHeight);
+		
+		frame.addDrawable(leftSide);
+		frame.addDrawable(rightSide);
+		frame.addDrawable(bottom);
+		frame.addDrawable(top);
+		
+	}
+
+}

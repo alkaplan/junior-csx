@@ -1,0 +1,227 @@
+package springs;
+
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+
+import org.opensourcephysics.controls.AbstractSimulation;
+import org.opensourcephysics.controls.SimulationControl;
+import org.opensourcephysics.display.Circle;
+import org.opensourcephysics.frames.DisplayFrame;
+
+public class BoveProgram extends AbstractSimulation {
+
+	SpringParticle[] bungee;
+	double restDistance;
+	static double time = 0.001;
+	static double timeElapsed = 0;
+	JFrame jFrame;
+	JButton button;
+	static boolean buttonPressed;
+	static double height;
+	static double g = 9.81;
+	static double minHeight;
+	DisplayFrame frame = new DisplayFrame("X", "Y", "Bungee");
+
+	protected void doStep() {
+
+		for (int i = 0; i < bungee.length; i++) {
+
+			double Fx1 = 0;
+			double Fx2 = 0;
+			double Fy1 = 0;
+			double Fy2 = 0;
+
+			if(i != (bungee.length-1)) {
+				Fx1 = xForce(bungee[i], bungee[i+1]);
+				Fy1 = yForce(bungee[i], bungee[i+1]) - bungee[i].mass * g;
+			}
+			else {
+				Fx1 = 0;
+				Fy1 = -bungee[i].mass * g;
+			}
+		
+			if(i != 0) {
+				Fx2 = xForce(bungee[i], bungee[i-1]);
+				Fy2 = yForce(bungee[i], bungee[i-1]);
+			}
+
+			double Fxtot = Fx1 + Fx2;
+			double Fytot = Fy1 + Fy2;
+			
+			System.out.println(Fxtot);
+			System.out.println(Fytot);
+
+			double ax = Fxtot/(bungee[i].mass);
+			double ay = Fytot/(bungee[i].mass);
+			double ary = -1 * control.getDouble("Beta") * bungee[i].vy;
+			ay += ary;
+
+			bungee[i].vx += ax * time;
+			bungee[i].vy += ay * time;
+
+		}
+
+
+		for (int i = 0; i < bungee.length; i++) {
+			bungee[i].x += bungee[i].vx * time;
+			bungee[i].y += bungee[i].vy * time;
+			bungee[i].setXY(bungee[i].x, bungee[i].y);
+		}
+		
+		if(buttonPressed == false) {
+			bungee[0].x = 0;
+			bungee[0].y = height;
+			bungee[0].setCoords();
+		}
+
+		timeElapsed += time;
+
+		if(minHeight > bungee[bungee.length-1].y) {
+			minHeight = bungee[bungee.length-1].y;
+		}
+		else {
+			if(bungee[bungee.length-1].vy < 0.5 && bungee[bungee.length-1].vy > -0.5) {
+				//buttonPressed = true;
+			}
+		}
+
+	}
+
+	public void initialize() {
+
+		frame.clearDrawables();
+		
+		time = control.getDouble("time step");
+		height = control.getDouble("height");
+
+		int numParticles = (int)control.getDouble("number of particles");
+		double mass = control.getDouble("particle mass");
+		double yStep = (control.getDouble("length"))/numParticles;
+		double kEach = control.getDouble("k");
+
+		bungee = new SpringParticle[numParticles];
+
+		this.delayTime = 10;
+		
+		int colorStep = (int)(255/bungee.length);
+		int currentColor = colorStep;
+
+		for (int i = 0; i < bungee.length; i++) {
+			bungee[i] = new SpringParticle(mass, kEach, 0, height-(i*yStep), 0, 0);
+			bungee[i].setXY(bungee[i].x, bungee[i].y);
+			bungee[i].color = new Color(currentColor * i, 0, 255 - (currentColor * i));
+			frame.addDrawable(bungee[i]);
+		}
+		
+		jFrame = new JFrame("");
+		
+		button = new JButton("let go of spring");
+		
+		buttonPressed = false;
+		
+		button.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				buttonPressed = true;
+			}
+		});
+		
+		jFrame.add(button);
+		jFrame.setVisible(true);
+
+		restDistance = distance(bungee[1], bungee[2]);
+
+		minHeight = height - control.getDouble("length");
+
+		frame.setVisible(true);
+		frame.setPreferredMinMax(-5, 5, 0, 120);
+		
+		stretchSpring(bungee, frame, restDistance + 0.000981);
+
+	}
+
+	/**
+	 * finds individual k given total k
+	 * @param kTot
+	 * @param numParticles
+	 * @return
+	 */
+	private double findK(double kTot, int numParticles) {
+		return kTot * numParticles;
+	}
+
+	public void reset() {
+		control.setValue("time step", 0.004);
+		control.setValue("number of particles", 200);
+		control.setValue("length", 20);
+		control.setValue("height", 100);
+		control.setValue("particle mass", .25);
+		control.setValue("Beta", 0.01);
+		control.setValue("k", 2500);
+	}
+
+	public void stretchSpring(SpringParticle[] spr, DisplayFrame f, double d) {
+		
+		double height = spr[0].y;
+		
+		for (int i = 0; i < spr.length; i++) {
+			spr[i].y = height - d * i;
+			spr[i].setCoords();
+		}
+		
+	}
+
+	/**
+	 * calculates the spring force on particle 1 due to particle 2
+	 * @param part1
+	 * @param part2
+	 * @return
+	 */
+	public double xForce(SpringParticle part1, SpringParticle part2) {
+
+		double dist = distance(part1, part2) - restDistance;
+
+		double yDist = part2.y - part1.y;
+		double xDist = part2.x - part1.x;
+
+		double angle = Math.atan2(yDist, xDist);
+
+		double totalForce = part1.k * dist;
+
+		double xForce = totalForce * Math.cos(angle);
+
+		return xForce;
+	}
+
+	public double yForce(SpringParticle part1, SpringParticle part2) {
+
+		double dist = distance(part1, part2) - restDistance;
+
+		double yDist = part2.y - part1.y;
+		double xDist = part2.x - part1.x;
+
+		double angle = Math.atan2(yDist, xDist);
+
+		double totalForce = part1.k * dist;
+
+		double yForce = totalForce * Math.sin(angle);
+
+		return yForce;
+
+	}
+
+	public double distance(SpringParticle a, SpringParticle b) {
+
+		double dist = Math.sqrt(Math.pow((a.x - b.x),2) + Math.pow((a.y - b.y),2));
+
+		return dist;
+	}
+
+	public static void main(String[] args) {
+		SimulationControl.createApp(new BoveProgram());
+	}
+
+}

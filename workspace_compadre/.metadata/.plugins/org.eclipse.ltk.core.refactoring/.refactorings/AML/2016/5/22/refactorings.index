@@ -1,0 +1,14 @@
+1464199812580	Rename field 'period'
+1464200039739	Rename field 'toggleButton'
+1464201327340	Delete element
+1464201919838	Rename field 'string'
+1464320140457	Rename type 'DeriveWaveEquation'
+1464322059260	Rename type 'LambdaversusT'
+1464322205430	Rename type 'LambdaversusFrequency'
+1464334358907	Rename field 'checkPanel'
+1464335315122	Rename type 'TversusLambda'
+1464335333218	Delete elements
+1464351824235	Rename field 'periodsToTest'
+1464352104161	Rename field 'frequencyToTest'
+1464352144229	Rename field 'omega'
+1464353213128	Rename field 'period'

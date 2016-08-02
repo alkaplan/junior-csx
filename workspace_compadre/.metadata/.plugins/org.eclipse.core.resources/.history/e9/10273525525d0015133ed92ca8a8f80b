@@ -1,0 +1,51 @@
+package riemannSum;
+
+import polyfun.Polynomial;
+
+public abstract class Riemann {
+
+	double delta;
+	double left;
+	double right;
+	double subintervals;
+	
+	public double getDelta() {
+		return delta;
+	}
+	public void setDelta(double delta) {
+		this.delta = delta;
+	}
+	public double getLeft() {
+		return left;
+	}
+	public void setLeft(double left) {
+		this.left = left;
+	}
+	public double getRight() {
+		return right;
+	}
+	public void setRight(double right) {
+		this.right = right;
+	}
+	public double getSubintervals() {
+		return subintervals;
+	}
+	public void setSubintervals(double subintervals) {
+		this.subintervals = subintervals;
+	}
+	
+	public double rs(Polynomial p, double left, double right, int subintervals) {
+		double delta = (right - left)/subintervals;
+		System.out.println(delta);
+		double area = 0;
+		
+		for (double i = left; i < subintervals; i+= delta) {
+			area += slice(p, i, i+delta);
+		}
+		
+		return area;
+	}
+	
+	public abstract double slice(polyfun.Polynomial p, double sleft, double sright);
+
+}

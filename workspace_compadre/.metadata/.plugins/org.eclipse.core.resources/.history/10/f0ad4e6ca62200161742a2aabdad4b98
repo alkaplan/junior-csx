@@ -1,0 +1,224 @@
+package springs;
+
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JFormattedTextField;
+import javax.swing.JFrame;
+
+import org.opensourcephysics.controls.AbstractSimulation;
+import org.opensourcephysics.controls.SimulationControl;
+import org.opensourcephysics.display.Circle;
+import org.opensourcephysics.frames.DisplayFrame;
+
+public class DeriveWaveEquation extends AbstractSimulation {
+
+	SpringParticle[] string;
+	double restDistance;
+	static double time = 0.001;
+	static double timeElapsed = 0;
+	static double amplitude = 2;
+	static double period = 40;
+	static double startingY;
+	static JButton showGraph;
+	static JFrame jframe;
+	DisplayFrame graph = new DisplayFrame("","","Data for Wave Equation");
+	JFormattedTextField data;
+	static boolean waveToggle = true;
+	static boolean wavesOn = true;
+	static double startingX;
+	static double waveTime;
+	static double maxX;
+	static double topWave;
+	DisplayFrame frame = new DisplayFrame("X", "Y", "String Wave");
+
+	protected void doStep() {
+
+		for (int i = 0; i < string.length; i++) {
+
+			double Fx1 = 0;
+			double Fx2 = 0;
+			double Fy1 = 0;
+			double Fy2 = 0;
+
+			if(i != (string.length-1)) {
+				Fx1 = xForce(string[i], string[i+1]);
+				Fy1 = yForce(string[i], string[i+1]);
+			}
+
+			if(i != 0) { 
+				Fx2 = xForce(string[i], string[i-1]);
+				Fy2 = yForce(string[i], string[i-1]);
+			}
+
+			double Fxtot = Fx1 + Fx2;
+			double Fytot = Fy1 + Fy2;
+
+			double ax = Fxtot/(string[i].mass);
+			double ay = Fytot/(string[i].mass);
+
+			string[i].vx += ax * time;
+			string[i].vy += ay * time;			
+
+		}
+
+		for (int i = 1; i < string.length; i++) {
+			string[i].x += string[i].vx * time;
+			string[i].y += string[i].vy * time;
+			string[i].setCoords();
+		}
+
+		string[0].x = startingX;
+		string[0].y = startingY + amplitude * Math.sin(time * period);
+		string[0].setCoords();
+
+		string[string.length-1].x = maxX;
+		string[string.length-1].setXY(string[string.length-1].x, string[string.length-1].y);
+
+		if(string[0].y/startingY < 1.01 && string[0].y/startingY > .99) {
+			System.out.println(timeElapsed);
+		}
+
+		timeElapsed += time;
+
+	}
+
+	public void initialize() {
+
+		frame.clearDrawables();
+
+		time = control.getDouble("time step");
+		amplitude = control.getDouble("wave amplitude");
+		period = control.getDouble("period");
+		int numParticles = (int)control.getDouble("number of particles");
+		startingX = control.getDouble("minimum x");
+		maxX = control.getDouble("maximum x");
+		startingY = control.getDouble("starting y");
+		double mass = control.getDouble("particle mass");
+		double kTot = control.getDouble("total k");
+
+		double step = (maxX - startingX)/numParticles;
+
+		restDistance = step;
+
+		double kEach = 4000;
+
+		int colorStep = (int)255/numParticles;
+
+		showGraph = new JButton("Toggle Waves");
+
+		showGraph.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				waveToggle = !waveToggle;
+				wavesOn = true;
+			}
+		});
+
+		jframe = new JFrame("Button");
+
+		jframe.add(showGraph);
+		jframe.setSize(50, 50);
+		jframe.setVisible(true);
+
+
+		this.delayTime = 10;
+
+		string = new SpringParticle[numParticles];
+
+		for (int i = 0; i < string.length; i++) {
+			string[i] = new SpringParticle(mass, kEach, i * step, startingY, 0, 0);
+			string[i].setCoords();
+			string[i].color = new Color(0, 255 - colorStep * i, colorStep*i);
+			frame.addDrawable(string[i]);
+		}
+
+		maxX = string[string.length-1].x;
+
+		frame.setVisible(true);
+		frame.setPreferredMinMax(startingX - ((maxX-startingX)/2), maxX + ((maxX-startingX)/2), startingY - startingY/2, startingY + startingY/2);
+
+	}
+
+	/**
+	 * finds individual k given total k
+	 * @param kTot
+	 * @param numParticles
+	 * @return
+	 */
+	private double findK(double kTot, int numParticles) {
+		return kTot * numParticles;
+	}
+
+	public void reset() {
+		control.setValue("time step", 0.001);
+		control.setValue("number of particles", 100);
+		control.setValue("minimum x", 0);
+		control.setValue("maximum x", 100);
+		control.setValue("starting y", 10);
+		control.setValue("wave amplitude", 2);
+		control.setValue("period", 40);
+		control.setValue("particle mass", 1);
+		control.setValue("total k", 24);
+	}
+
+	public void stop() {
+
+	}
+
+	/**
+	 * calculates the spring force on particle 1 due to particle 2
+	 * @param part1
+	 * @param part2
+	 * @return
+	 */
+	public double xForce(SpringParticle part1, SpringParticle part2) {
+
+		double dist = distance(part1, part2);
+
+		double yDist = part2.y - part1.y;
+		double xDist = part2.x - part1.x;
+
+		double angle = Math.atan2(yDist, xDist);
+
+		double totalForce = part1.k * dist;
+
+		double xForce = totalForce * Math.cos(angle);
+
+		return xForce;
+	}
+
+	public double yForce(SpringParticle part1, SpringParticle part2) {
+
+		double dist = distance(part1, part2);
+
+		double yDist = part2.y - part1.y;
+		double xDist = part2.x - part1.x;
+
+		double angle = Math.atan2(yDist, xDist);
+
+		double totalForce = part1.k * dist;
+
+		double yForce = totalForce * Math.sin(angle);
+
+		return yForce;
+
+	}
+
+	public double distance(SpringParticle a, SpringParticle b) {
+
+		double dist = Math.sqrt(Math.pow((a.x - b.x),2) + Math.pow((a.y - b.y),2));
+
+		return dist;
+	}
+	
+	public void drawGraph() {
+		
+	}
+
+	public static void main(String[] args) {
+		SimulationControl.createApp(new DeriveWaveEquation());
+	}
+
+}

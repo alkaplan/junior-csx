@@ -1,0 +1,79 @@
+package riemannSum;
+
+import polyfun.Polynomial;
+
+import org.opensourcephysics.display.DrawableShape;
+import org.opensourcephysics.display.Trail;
+import org.opensourcephysics.frames.*;
+
+public abstract class Riemann {
+
+	double delta;
+	double left;
+	double right;
+	double subintervals;
+	
+	public double getDelta() {
+		return delta;
+	}
+	public void setDelta(double delta) {
+		this.delta = delta;
+	}
+	public double getLeft() {
+		return left;
+	}
+	public void setLeft(double left) {
+		this.left = left;
+	}
+	public double getRight() {
+		return right;
+	}
+	public void setRight(double right) {
+		this.right = right;
+	}
+	public double getSubintervals() {
+		return subintervals;
+	}
+	public void setSubintervals(double subintervals) {
+		this.subintervals = subintervals;
+	}
+	
+	public double rs(Polynomial p, double left, double right, double subintervals) {
+		double delta = (right - left)/subintervals;
+		double area = 0;
+		
+		double x = left;
+		for (double i = 0; i < subintervals; i++) {
+			area += slice(p, x, x+delta);
+			x += delta;
+		}
+		
+		return area;
+	}
+	
+	public static void rsPlot(DisplayFrame frame, Polynomial p, int index, double precision, double left, double right,
+			int subintervals) {
+		Trail t = new Trail();
+		double delta = (left-right)/subintervals;
+		double x = left;
+		PolyPractice popeye = new PolyPractice();
+		for (int i = 0; i < 5000; i++) {
+			t.addPoint(x, popeye.eval(p,x));
+			x += delta;
+		}
+
+		
+		for (int i = 0; i < subintervals; i++) {
+			DrawableShape rect = DrawableShape.createRectangle(x, y, w, h);
+		}
+		
+		
+		frame.addDrawable(t);
+		
+	}
+	
+	public abstract double slice(polyfun.Polynomial p, double sleft, double sright);
+	
+	public abstract void slicePlot(DisplayFrame frame, Polynomial p, double sleft, double sright);
+
+}

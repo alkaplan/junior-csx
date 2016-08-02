@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename local variable &apos;currentPeriod&apos; in &apos;springs.FundamentalFrequency.initialize()&apos; to &apos;currentFrequency&apos;&#x0A;- Original project: &apos;AML&apos;&#x0A;- Original element: &apos;springs.FundamentalFrequency.initialize().currentPeriod&apos;&#x0A;- Renamed element: &apos;currentPeriod&apos;&#x0A;- Update references to refactored element" description="Rename local variable &apos;currentPeriod&apos;" id="org.eclipse.jdt.ui.rename.local.variable" input="/src&lt;springs{FundamentalFrequency.java[FundamentalFrequency~initialize@currentPeriod!3340!3372!3347!3359!D!0!false" name="currentFrequency" references="true" stamp="1464828096089" version="1.0"/>
+</session>

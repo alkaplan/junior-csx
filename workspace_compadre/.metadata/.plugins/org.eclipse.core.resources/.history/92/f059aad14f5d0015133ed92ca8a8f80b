@@ -1,0 +1,24 @@
+package riemannSum;
+
+import polyfun.Polynomial;
+
+public class RightHandRule extends Riemann {
+	
+	public RightHandRule() {
+		
+	}
+	
+	public double slice(Polynomial p, double sleft, double sright) {
+		double area;
+		double height;
+		double length;
+		PolyPractice popeye = new PolyPractice();
+		
+		height = popeye.eval(p, sright);
+		length = sright - sleft;
+		area = height*length;
+		
+		return area;
+	}
+
+}

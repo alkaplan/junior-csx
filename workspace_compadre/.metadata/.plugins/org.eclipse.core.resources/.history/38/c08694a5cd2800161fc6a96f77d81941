@@ -1,0 +1,541 @@
+package springs;
+
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyEvent;
+
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JFormattedTextField;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+import org.opensourcephysics.controls.AbstractSimulation;
+import org.opensourcephysics.controls.SimulationControl;
+import org.opensourcephysics.display.Circle;
+import org.opensourcephysics.display.Trail;
+import org.opensourcephysics.frames.DisplayFrame;
+import org.opensourcephysics.frames.PlotFrame;
+
+public class WaveDerivation extends AbstractSimulation {
+
+	SpringParticle[][] strings;
+	double restDistance;
+	static double time = 0.001;
+	static double timeElapsed = 0;
+	static double amplitude;
+	static double period;
+	static double startingY;
+	PlotFrame VvTFrame;
+	PlotFrame TvLambdaFrame;
+	PlotFrame VvLambdaFrame;
+	JButton initialize;
+	JFrame jFrame;
+	JPanel checkPanel;
+	JFrame buttonFrame;
+	JCheckBox VvT;
+	JCheckBox TvLambda;
+	JCheckBox VvLambda;
+	static double startingX;
+	static double waveTime;
+	static double maxX;
+	static double waveTop;
+	static double[] frequency;
+	static boolean[] stringTested;
+	static boolean VvLambdaGraph = true;
+	static boolean TvLambdaGraph = true;
+	static boolean VvTGraph = true;
+	static Point[] VTPoints;
+	static Point[] VLambdaPoints;
+	static Point[] TLambdaPoints;
+	DisplayFrame frame = new DisplayFrame("X", "Y", "String Wave");
+
+	protected void doStep() {
+
+		for(int j = 0; j < strings.length; j++) {
+			if(stringTested[j] == false) {
+				for (int i = 0; i < strings[0].length; i++) {
+
+					double Fx1 = 0;
+					double Fx2 = 0;
+					double Fy1 = 0;
+					double Fy2 = 0;
+
+					if(i != (strings[0].length-1)) {
+						Fx1 = xForce(strings[j][i], strings[j][i+1]);
+						Fy1 = yForce(strings[j][i], strings[j][i+1]);
+					}
+
+					if(i != 0) { 
+						Fx2 = xForce(strings[j][i], strings[j][i-1]);
+						Fy2 = yForce(strings[j][i], strings[j][i-1]);
+					}
+
+					double Fxtot = Fx1 + Fx2;
+					double Fytot = Fy1 + Fy2;
+
+					double ax = Fxtot/(strings[j][i].mass);
+					double ay = Fytot/(strings[j][i].mass);
+
+					strings[j][i].vx += ax * time;
+					strings[j][i].vy += ay * time;			
+
+				}
+
+				for (int i = 1; i < strings[0].length; i++) {
+					strings[j][i].x += strings[j][i].vx * time;
+					strings[j][i].y += strings[j][i].vy * time;
+					strings[j][i].setCoords();
+				}
+
+				strings[j][0].x = 0;
+				strings[j][0].y = startingY + amplitude * Math.sin(timeElapsed * frequency[j]);
+				strings[j][0].setCoords();
+				strings[j][strings[0].length-1].x = maxX;
+				strings[j][strings[0].length-1].setXY(strings[j][strings.length-1].x, strings[j][strings.length-1].y);				
+
+				if(checkDone(strings[j]) == true){
+					runStuff(strings[j], timeElapsed, j);
+					stringTested[j] = true;
+
+				}
+			}
+
+		}
+
+		boolean allDone = false;
+		for (int i = 0; i < stringTested.length; i++) {
+			if(stringTested[i] == false) {
+				allDone = false;
+				break;
+			}
+			else {
+				allDone = true;
+			}
+
+		}
+
+		if(allDone == true) {
+			finishSim();
+		}
+
+		timeElapsed += time;
+
+	}
+
+	public void initialize() {
+
+		frame.clearDrawables();
+
+
+		time = control.getDouble("time step");
+		amplitude = control.getDouble("wave amplitude");
+		int numParticles = (int)control.getDouble("number of particles");
+		startingX = control.getDouble("minimum x");
+		maxX = control.getDouble("maximum x");
+		startingY = control.getDouble("starting y");
+		int numStrings = (int)(control.getDouble("strings to test"));
+
+		double mass = control.getDouble("particle mass");
+
+		double minPeriod = control.getDouble("min period");
+		double maxPeriod = control.getDouble("max period");
+
+		double step = (maxX - startingX)/(numParticles - 1);
+
+		restDistance = step;
+
+		double kEach = 4000;
+
+		jFrame = new JFrame("select which graphs");
+		
+		checkPanel = new JPanel();
+		checkPanel.setLayout(new FlowLayout());
+
+		VvT = new JCheckBox("Velocity versus Period");
+		VvT.setMnemonic(KeyEvent.VK_C);
+		VvT.setSelected(true);
+
+		TvLambda = new JCheckBox("Period versus Wavelength");
+		TvLambda.setMnemonic(KeyEvent.VK_M);
+		TvLambda.setSelected(true);
+
+		VvLambda = new JCheckBox("Velocity versus Wavelength");
+		VvLambda.setMnemonic(KeyEvent.VK_P);
+		VvLambda.setSelected(true);
+		
+		VvT.addItemListener(new ItemListener() {
+	         public void itemStateChanged(ItemEvent e) {   
+	        	 if(e.getStateChange() == ItemEvent.SELECTED) {
+		        	 VvTGraph = true;
+	        	 }
+	        	 else {
+	        		 VvTGraph = false;
+	        	 }
+	         }           
+	      });
+
+	      TvLambda.addItemListener(new ItemListener() {
+	         public void itemStateChanged(ItemEvent e) {             
+	        	 if(e.getStateChange() == ItemEvent.SELECTED) {
+		        	 TvLambdaGraph = true;
+	        	 }
+	        	 else {
+	        		 TvLambdaGraph = false;
+	        	 }
+	         }           
+	      });
+
+	      VvLambda.addItemListener(new ItemListener() {
+	         public void itemStateChanged(ItemEvent e) {             
+	        	 if(e.getStateChange() == ItemEvent.SELECTED) {
+		        	 VvLambdaGraph = true;
+	        	 }
+	        	 else {
+	        		 VvLambdaGraph = false;
+	        	 }
+	         }           
+	      });
+
+		initialize = new JButton("initialize");
+
+		initialize.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				initializeFrames();
+			}
+		});
+		
+		buttonFrame = new JFrame("intialize graphs");
+
+		checkPanel.add(VvT);
+		checkPanel.add(TvLambda);
+		checkPanel.add(VvLambda);
+		checkPanel.setVisible(true);
+		
+		buttonFrame.add(initialize);
+		buttonFrame.setSize(300, 175);
+		
+		buttonFrame.setLocation(0, 0);
+		jFrame.setLocation(0, 190);
+		
+		jFrame.setSize(300, 200);
+
+		jFrame.add(checkPanel);
+		buttonFrame.setVisible(true);
+		jFrame.setVisible(true);
+
+		//initialize 2d stuff
+		numStrings = (int)control.getDouble("strings to test");
+
+		frequency = new double[numStrings];
+
+		double periodStep = (maxPeriod - minPeriod)/numStrings;
+		double currentPeriod = minPeriod;
+
+		stringTested = new boolean[numStrings];
+
+		for (int i = 0; i < frequency.length; i++) {
+			stringTested[i] = false;
+			frequency[i] = currentPeriod;
+			currentPeriod += periodStep;
+		}
+
+		this.delayTime = 1;
+
+		int stringsToTest = (int)control.getDouble("strings to test");
+
+		strings = new SpringParticle[stringsToTest][numParticles];
+
+		int colorStep = (int)255/strings.length;
+
+		for (int j = 0; j < strings.length; j++) {
+			for (int i = 0; i < strings[0].length; i++) {
+				strings[j][i] = new SpringParticle(mass, kEach, i * step, startingY, 0, 0);
+				strings[j][i].setCoords();
+				strings[j][i].color = new Color(0, 255 - j * colorStep, j * colorStep);
+				strings[j][0].color = Color.red;
+				frame.addDrawable(strings[j][i]);
+			}
+		}
+		
+		VTPoints = new Point[strings.length];
+		VLambdaPoints = new Point[strings.length];
+		TLambdaPoints = new Point[strings.length];
+		
+		frame.setVisible(true);
+		frame.setLocation(310, 0);
+		frame.setSize(1000, 400);
+		frame.setPreferredMinMax(startingX - ((maxX-startingX)/2), maxX + ((maxX-startingX)/2), startingY - startingY/2, startingY + startingY/2);
+
+
+	}
+
+
+	/**
+	 * finds individual k given total k
+	 * @param kTot
+	 * @param numParticles
+	 * @return
+	 */
+	private double findK(double kTot, int numParticles) {
+		return kTot * numParticles;
+	}
+
+	public void reset() {
+		control.setValue("time step", 0.005);
+		control.setValue("number of particles", 100);
+		control.setValue("minimum x", 0);
+		control.setValue("maximum x", 100);
+		control.setValue("starting y", 10);
+		control.setValue("wave amplitude", 2);
+		control.setValue("particle mass", 1);
+		control.setValue("total k", 24);
+		control.setValue("strings to test", 10);
+		control.setValue("min period", 30);
+		control.setValue("max period", 60);
+	}
+
+	public void stop() {
+
+	}
+
+	/**
+	 * calculates the spring force on particle 1 due to particle 2
+	 * @param part1
+	 * @param part2
+	 * @return
+	 */
+	public double xForce(SpringParticle part1, SpringParticle part2) {
+
+		double dist = distance(part1, part2);
+
+		double yDist = part2.y - part1.y;
+		double xDist = part2.x - part1.x;
+
+		double angle = Math.atan2(yDist, xDist);
+
+		double totalForce = part1.k * dist;
+
+		double xForce = totalForce * Math.cos(angle);
+
+		return xForce;
+	}
+
+	public double yForce(SpringParticle part1, SpringParticle part2) {
+
+		double dist = distance(part1, part2);
+
+		double yDist = part2.y - part1.y;
+		double xDist = part2.x - part1.x;
+
+		double angle = Math.atan2(yDist, xDist);
+
+		double totalForce = part1.k * dist;
+
+		double yForce = totalForce * Math.sin(angle);
+
+		return yForce;
+
+	}
+
+	public double distance(SpringParticle a, SpringParticle b) {
+
+		double dist = Math.sqrt(Math.pow((a.x - b.x),2) + Math.pow((a.y - b.y),2));
+
+		return dist;
+	}
+
+	public void initializeFrames() {
+		if(VvTGraph == true) {
+			VvTFrame = new PlotFrame("Period (1/s)","Velocity (m/s)","Velocity versus Period");
+			VvTFrame.setVisible(true);
+			VvTFrame.setPreferredMinMax(0, 100, 0, 100);
+			VvTFrame.setLocation(0, 400);
+		}
+		if(TvLambdaGraph == true) {
+			TvLambdaFrame = new PlotFrame("1/f","Wavelength","Period versus Wavelength");
+			TvLambdaFrame.setVisible(true);
+			TvLambdaFrame.setPreferredMinMax(0, 100, 0, 100);
+			TvLambdaFrame.setLocation(300, 400);
+		}
+		if(VvLambdaGraph == true) {
+			VvLambdaFrame = new PlotFrame("Wavelength (m)","Velocity (m/s)","Velocity versus Wavelength");
+			VvLambdaFrame.setVisible(true);
+			VvLambdaFrame.setPreferredMinMax(0, 100, 0, 100);
+			VvLambdaFrame.setLocation(600, 400);
+		}
+	}
+
+	private static boolean checkDone(SpringParticle[] string) {
+
+		if(string[string.length-1].y/(startingY + amplitude) < 1.01 && string[string.length-1].y/(startingY + amplitude) > .99){
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+
+	public void runStuff(SpringParticle[] arr, double totalTime, int arrayIndex) {
+
+		double lambda = findLambda(arr);
+		double f = frequency[arrayIndex];
+		double v = findV(arr, totalTime);
+
+		if(VvTGraph == true) {
+			VvTFrame.append(1, f, v);
+			VTPoints[arrayIndex] = new Point(f, v);
+			VvTFrame.setPreferredMinMax(0, 100, 0, 100);
+		}
+		if(TvLambdaGraph == true) {
+			TvLambdaFrame.append(1, 1/f, lambda);
+			TLambdaPoints[arrayIndex] = new Point(1/f, lambda);
+			TvLambdaFrame.setPreferredMinMax(0, 100, 0, 100);
+		}
+		if(VvLambdaGraph == true) {
+			VvLambdaFrame.append(1, lambda, v);
+			VLambdaPoints[arrayIndex] = new Point(lambda, v);
+			VvLambdaFrame.setPreferredMinMax(0, 100, 0, 100);
+		}
+	}
+
+	private double findV(SpringParticle[] arr, double totalTime) {
+
+		double velocity = arr[arr.length-1].x/totalTime;
+
+		return velocity;
+	}
+
+	private double findLambda(SpringParticle[] arr) {
+
+		double tallest = arr[arr.length-1].y;
+
+		double lambda = 0;
+
+		boolean pastFirstWave = false;
+
+		for (int i = arr.length-1; i > 0; i--) {
+
+			if(arr[i].y < startingY) {
+				pastFirstWave = true;
+			}
+
+			if(pastFirstWave == true) {
+				if(arr[i].y/tallest > .975 && arr[i].y/tallest < 1.025) {
+					lambda = arr[arr.length-1].x - arr[i].x;
+					break;
+				}
+			}
+		}
+
+		return lambda;
+	}
+
+	public void finishSim() {
+		
+		System.out.println("HIII");
+		
+		double[] TLambdaX = new double[strings.length];
+		double[] TLambdaY = new double[strings.length];
+		double[] VTX = new double[strings.length];
+		double[] VTY = new double[strings.length];
+		double[] VLambdaX = new double[strings.length];
+		double[] VLambdaY = new double[strings.length];
+
+		for (int i = 0; i < strings.length; i++) {
+			TLambdaX[i] = TLambdaPoints[i].x;
+			TLambdaY[i] = TLambdaPoints[i].y;
+			VTX[i] = VTPoints[i].x;
+			VTY[i] = VTPoints[i].y;
+			VLambdaX[i] = VLambdaPoints[i].x;
+			VLambdaY[i] = VLambdaPoints[i].y;
+		}
+		
+		Line TL = new Line(correlation(TLambdaX, TLambdaY) * (std(TLambdaY)/std(TLambdaX)), b(TLambdaX, TLambdaY));
+		Line VT = new Line(correlation(VTX, VTY) * (std(VTY)/std(VTX)), b(VTX, VTY));
+		Line VL = new Line(correlation(VLambdaX, VLambdaY) * (std(VLambdaY)/std(VLambdaX)), b(VLambdaX, VLambdaY));
+		
+		drawLine(TL, TvLambdaFrame, 0, 100, 0.1, 2);
+		drawLine(VT, VvTFrame,      0, 100, 0.1, 2);
+		drawLine(VL, VvLambdaFrame, 0, 100, 0.1, 2);
+		
+		System.out.println("Slope T v Lambda: " + TL.m);
+		System.out.println("Slope V v T: " + VT.m);
+		System.out.println("Slope V v Lambda: " + VL.m);
+		
+		
+		
+		stop();
+	}
+	
+	
+	public double std(double[] arr) {
+		
+		double avg = mean(arr);
+		double sum = 0;
+		
+		for (int i = 0; i < arr.length; i++) {
+			sum += Math.pow((arr[i] - avg),2);
+		}
+		
+		double insideSqrt = sum/((double)(arr.length));
+		
+		double sigma = Math.sqrt(insideSqrt);
+		
+		return sigma;
+	}
+	
+	public double b(double[]x, double[]y) {
+		
+		return mean(y) - (correlation(x, y) * (std(y)/std(x)) * mean(x));
+		
+	}
+	
+	public double mean(double[] arr) {
+		
+		double sum = 0;
+		for (int i = 0; i < arr.length; i++) {
+			sum += arr[i];
+		}
+		
+		double avg = sum/((double)(arr.length));
+		
+		return avg;
+	}
+	
+	public double correlation(double[] x, double[] y) {
+		
+		double sumProds = 0;
+		double sumXs = 0;
+		double sumYs = 0;
+		
+		for (int i = 0; i < x.length; i++) {
+			sumProds += x[i] * y[i];
+			sumXs += Math.pow(x[i], 2);
+			sumYs += Math.pow(y[i], 2);
+		}
+		
+		double r  = sumProds/(Math.sqrt(sumXs * sumYs));
+		
+		return r;
+	}
+	
+	public void drawLine(Line l, PlotFrame frame, double min, double max, double step, int index) {
+		
+		double x = min;
+		for (int i = 0; i < max; i += step) {
+			frame.append(index, x, (l.m*x) + l.b);
+		}
+		
+	}
+	
+	public static void main(String[] args) {
+		SimulationControl.createApp(new WaveDerivation());
+	}
+
+}

@@ -1,0 +1,11 @@
+package riemannSum;
+
+public class LeftHandRule extends Riemann {
+	
+	
+	
+	public LeftHandRule() {
+		
+	}
+
+}

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename package &apos;matrices&apos; to &apos;matrixmath&apos;&#x0A;- Original project: &apos;AML&apos;&#x0A;- Original element: &apos;AML/src/matrices&apos;&#x0A;- Renamed element: &apos;AML/src/matrixmath&apos;&#x0A;- Update references to refactored element&#x0A;- Update textual occurrences in comments and strings" description="Rename package &apos;matrices&apos;" flags="589830" hierarchical="false" id="org.eclipse.jdt.ui.rename.package" input="/src&lt;matrices" name="matrixmath" qualified="false" references="true" stamp="1446557112889" textual="false" version="1.0"/>
+</session>
